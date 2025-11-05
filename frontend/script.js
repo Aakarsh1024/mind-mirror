@@ -719,11 +719,13 @@ async function saveEditedFeeling(e) {
         });
 
         if (response.ok) {
+            const updatedData = await response.json();
             showNotification('Feeling updated successfully!');
             closeEditModal();
             
-            // Force a refresh of the history list to show the change
-            loadFeelingsHistory();
+            // Call the NEW function to update the page directly
+            updateFeelingInHistory(updatedData);
+
         } else {
             const errorData = await response.json();
             showNotification(errorData.message || 'Failed to update feeling');
@@ -733,7 +735,6 @@ async function saveEditedFeeling(e) {
         console.error(error);
     }
 }
-
 function getMoodIconClass(mood) {
     const icons = {
         happy: 'fa-smile',
@@ -744,4 +745,37 @@ function getMoodIconClass(mood) {
         neutral: 'fa-meh'
     };
     return icons[mood] || 'fa-meh';
+}
+function updateFeelingInHistory(updatedData) {
+    // Find the feeling card on the page that matches the updated ID
+    const feelingCard = document.querySelector(`.edit-feeling[data-id="${updatedData._id}"]`).closest('.feeling-card');
+
+    if (feelingCard) {
+        // Update the text content directly
+        feelingCard.querySelector('.feeling-text').textContent = updatedData.feelingText;
+        
+        // Update the gratitude section
+        const gratitudeElement = feelingCard.querySelector('.feeling-gratitude');
+        if (updatedData.gratitude) {
+            if (gratitudeElement) {
+                gratitudeElement.textContent = `Grateful for: ${updatedData.gratitude}`;
+            } else {
+                // If it didn't exist before, create it
+                const newGratitudeDiv = document.createElement('div');
+                newGratitudeDiv.className = 'feeling-gratitude';
+                newGratitudeDiv.textContent = `Grateful for: ${updatedData.gratitude}`;
+                feelingCard.insertBefore(newGratitudeDiv, feelingCard.querySelector('.feeling-response'));
+            }
+        } else if (gratitudeElement) {
+            // If gratitude was removed, delete the element
+            gratitudeElement.remove();
+        }
+
+        // Update the mood
+        const moodIcon = getMoodIcon(updatedData.moodType);
+        feelingCard.querySelector('.feeling-mood').innerHTML = `${moodIcon} ${updatedData.moodType}`;
+
+        // Update the AI response
+        feelingCard.querySelector('.feeling-response').textContent = updatedData.aiResponse;
+    }
 }
