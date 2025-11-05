@@ -47,7 +47,7 @@ const elements = {
     calmModeModal: document.getElementById('calm-mode-modal')
 };
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://mind-mirror-q1tb.onrender.com';
 
 let currentUser = null;
 let selectedMood = null;
