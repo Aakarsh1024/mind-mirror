@@ -468,12 +468,6 @@ async function loadFeelingsHistory() {
 
 function displayFeelingsHistory(feelings) {
     elements.feelingsHistory.innerHTML = '';
-document.querySelectorAll('.edit-feeling').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        const feelingId = e.target.getAttribute('data-id');
-        openEditModal(feelingId); 
-    });
-});
     
     if (feelings.length === 0) {
         elements.feelingsHistory.innerHTML = '<p>No feelings recorded yet. Start sharing on your dashboard!</p>';
@@ -504,10 +498,15 @@ document.querySelectorAll('.edit-feeling').forEach(btn => {
         elements.feelingsHistory.appendChild(feelingCard);
     });
     
+    // Add event listeners to the newly created buttons
     document.querySelectorAll('.edit-feeling').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const feelingId = e.target.getAttribute('data-id');
-           openEditModal(feelingId);
+            // Find the full feeling object from our original array
+            const feelingData = feelings.find(f => f._id === feelingId);
+            if (feelingData) {
+                openEditModal(feelingData); // Pass the entire data object
+            }
         });
     });
     
@@ -653,19 +652,13 @@ function showNotification(message) {
 
 document.addEventListener('DOMContentLoaded', init);
 
-function openEditModal(feelingId) {
-    const feelingCard = document.querySelector(`.edit-feeling[data-id="${feelingId}"]`).closest('.feeling-card');
-    const feelingData = {
-        _id: feelingId,
-        feelingText: feelingCard.querySelector('.feeling-text').textContent,
-        moodType: feelingCard.querySelector('.feeling-mood').textContent.trim().split(' ')[1],
-        gratitude: feelingCard.querySelector('.feeling-gratitude')?.textContent.replace('Grateful for: ', '') || ''
-    };
-
+function openEditModal(feelingData) {
+    // Populate the form using the passed data object
     elements.editFeelingId.value = feelingData._id;
     elements.editFeelingText.value = feelingData.feelingText;
-    elements.editGratitude.value = feelingData.gratitude;
+    elements.editGratitude.value = feelingData.gratitude || '';
 
+    // Populate mood selector
     elements.editMoodSelector.innerHTML = ''; 
     const moods = ['happy', 'sad', 'angry', 'anxious', 'excited', 'neutral'];
     moods.forEach(mood => {
@@ -681,6 +674,7 @@ function openEditModal(feelingId) {
         elements.editMoodSelector.appendChild(btn);
     });
 
+    // Show the modal
     elements.editFeelingModal.classList.add('active');
 }
 
