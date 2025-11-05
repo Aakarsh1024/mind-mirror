@@ -1,5 +1,4 @@
-
-
+// DOM Elements
 const pages = {
     login: document.getElementById('login-page'),
     signup: document.getElementById('signup-page'),
@@ -24,20 +23,26 @@ const buttons = {
     closeCalmMode: document.getElementById('close-calm-mode')
 };
 
+// Consolidated all elements into a single object for clarity
 const elements = {
+    // History Filter Elements
     dateFilter: document.getElementById('date-filter'),
     clearFilterBtn: document.getElementById('clear-filter-btn'),
-      videoPreviewModal: document.getElementById('video-preview-modal'),
+    // Recording Preview Elements
+    videoPreviewModal: document.getElementById('video-preview-modal'),
     audioPreviewModal: document.getElementById('audio-preview-modal'),
     liveVideoPreview: document.getElementById('live-video-preview'),
     stopVideoPreviewBtn: document.getElementById('stop-video-preview-btn'),
     stopAudioPreviewBtn: document.getElementById('stop-audio-preview-btn'),
+    // Edit Modal Elements
     editFeelingModal: document.getElementById('edit-feeling-modal'),
     editFeelingForm: document.getElementById('edit-feeling-form'),
     editFeelingId: document.getElementById('edit-feeling-id'),
     editFeelingText: document.getElementById('edit-feeling-text'),
     editMoodSelector: document.getElementById('edit-mood-selector'),
     editGratitude: document.getElementById('edit-gratitude'),
+    cancelEditBtn: document.getElementById('cancel-edit-btn'),
+    // General App Elements
     navLinks: document.querySelectorAll('.nav-link'),
     moodButtons: document.querySelectorAll('.mood-btn'),
     feelingText: document.getElementById('feeling-text'),
@@ -50,19 +55,21 @@ const elements = {
     profileDate: document.getElementById('profile-date'),
     notification: document.getElementById('notification'),
     notificationMessage: document.getElementById('notification-message'),
-    
-    cancelEditBtn: document.getElementById('cancel-edit-btn'),
     calmModeModal: document.getElementById('calm-mode-modal')
 };
 
+// API Base URL
 const API_URL = 'https://mind-mirror-backend.onrender.com/api';
 
+// State
 let currentUser = null;
 let selectedMood = null;
 let isRecording = false;
 let mediaRecorder = null;
 let recordedChunks = [];
+let allFeelings = []; // Global array to store all feelings for filtering
 
+// Daily Quotes
 const dailyQuotes = [
     "The only way out is through. - Robert Frost",
     "You are braver than you believe, stronger than you seem, and smarter than you think. - A.A. Milne",
@@ -76,6 +83,7 @@ const dailyQuotes = [
     "Wake up with determination. Go to bed with satisfaction."
 ];
 
+// Initialize App
 function init() {
     const token = localStorage.getItem('token');
     if (token) {
@@ -85,11 +93,12 @@ function init() {
     }
 
     setupEventListeners();
-
     loadDailyQuote();
 }
 
+// --- CORRECTED: setupEventListeners is now a single, flat function ---
 function setupEventListeners() {
+    // Navigation listeners
     elements.navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
@@ -97,104 +106,71 @@ function setupEventListeners() {
             showPage(pageName);
         });
     });
+
+    // History Filter listeners
     elements.dateFilter.addEventListener('change', filterFeelingsByDate);
-elements.clearFilterBtn.addEventListener('click', () => {
-    elements.dateFilter.value = '';
-    loadFeelingsHistory(); // Load all feelings again
-});
+    elements.clearFilterBtn.addEventListener('click', () => {
+        elements.dateFilter.value = '';
+        // Use the global allFeelings to display all items again
+        displayFeelingsHistory(allFeelings);
+    });
 
+    // Recording Preview listeners
+    elements.stopVideoPreviewBtn.addEventListener('click', () => {
+        stopRecording();
+        buttons.recordVideo.innerHTML = '<i class="fas fa-video"></i> Record Video';
+    });
+    elements.stopAudioPreviewBtn.addEventListener('click', () => {
+        stopRecording();
+        buttons.recordVoice.innerHTML = '<i class="fas fa-microphone"></i> Record Voice';
+    });
 
-    function setupEventListeners() {
-   
-        elements.stopVideoPreviewBtn.addEventListener('click', () => {
-    stopRecording();
-    buttons.recordVideo.innerHTML = '<i class="fas fa-video"></i> Record Video';
-});
-elements.stopAudioPreviewBtn.addEventListener('click', () => {
-    stopRecording();
-    buttons.recordVoice.innerHTML = '<i class="fas fa-microphone"></i> Record Voice';
-});
-
+    // Edit Modal listeners
     elements.cancelEditBtn.addEventListener('click', closeEditModal);
     elements.editFeelingForm.addEventListener('submit', saveEditedFeeling);
-
-  
     elements.editFeelingModal.addEventListener('click', (e) => {
         if (e.target === elements.editFeelingModal) {
             closeEditModal();
         }
     });
-}
 
+    // Auth form listeners
     forms.login.addEventListener('submit', handleLogin);
     forms.signup.addEventListener('submit', handleSignup);
 
+    // Auth switch listeners
     buttons.showSignup.addEventListener('click', (e) => {
         e.preventDefault();
         showPage('signup');
     });
-
     buttons.showLogin.addEventListener('click', (e) => {
         e.preventDefault();
         showPage('login');
     });
 
+    // Logout listener
     buttons.logout.addEventListener('click', handleLogout);
 
+    // Dashboard listeners
     elements.moodButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             selectMood(btn.getAttribute('data-mood'));
         });
     });
-
     buttons.saveFeeling.addEventListener('click', saveFeeling);
-
-    buttons.recordVoice.addEventListener('click', toggleVoiceRecording);
-    buttons.recordVideo.addEventListener('click', toggleVideoRecording);
-
     buttons.calmMode.addEventListener('click', () => {
         elements.calmModeModal.classList.add('active');
     });
-
     buttons.closeCalmMode.addEventListener('click', () => {
         elements.calmModeModal.classList.remove('active');
     });
-}
-let allFeelings = [];
 
-async function loadFeelingsHistory() {
-    try {
-        const response = await fetch(`${API_URL}/feelings`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        if (response.ok) {
-            const feelings = await response.json();
-            allFeelings = feelings; // Store all feelings
-            displayFeelingsHistory(allFeelings); // Display all initially
-        } else {
-            showNotification('Failed to load feelings history');
-        }
-    } catch (error) {
-        showNotification('An error occurred. Please try again.');
-        console.error(error);
-    }
+    // Recording start listeners
+    buttons.recordVoice.addEventListener('click', toggleVoiceRecording);
+    buttons.recordVideo.addEventListener('click', toggleVideoRecording);
 }
 
-function filterFeelingsByDate() {
-    const selectedDate = elements.dateFilter.value;
-    if (!selectedDate) {
-        displayFeelingsHistory(allFeelings);
-        return;
-    }
-
-    const filteredFeelings = allFeelings.filter(feeling => {
-        // Convert feeling date to YYYY-MM-DD format to match input
-        const feelingDate = new Date(feeling.date).toISOString().split('T')[0];
-        return feelingDate === selectedDate;
-    });
-
-    displayFeelingsHistory(filteredFeelings);
-}
+// Page Navigation
 function showPage(pageName) {
     Object.values(pages).forEach(page => {
         page.classList.remove('active');
@@ -218,6 +194,7 @@ function showPage(pageName) {
     }
 }
 
+// Authentication functions
 async function handleLogin(e) {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
@@ -226,9 +203,7 @@ async function handleLogin(e) {
     try {
         const response = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
 
@@ -259,9 +234,7 @@ async function handleSignup(e) {
     try {
         const response = await fetch(`${API_URL}/auth/register`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, email, password })
         });
 
@@ -293,9 +266,7 @@ function handleLogout() {
 async function fetchUserProfile(token) {
     try {
         const response = await fetch(`${API_URL}/auth/profile`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (response.ok) {
@@ -323,107 +294,68 @@ function updateProfileUI() {
     }
 }
 
+// Mood Selection & AI Response
 function selectMood(mood) {
     selectedMood = mood;
-    
     elements.moodButtons.forEach(btn => {
         btn.classList.remove('selected');
         if (btn.getAttribute('data-mood') === mood) {
             btn.classList.add('selected');
         }
     });
-    
     generateAIResponse(mood);
 }
 
 function generateAIResponse(mood) {
     const responses = {
-        happy: [
-            "It's wonderful to see you're feeling happy! Keep spreading that positivity.",
-            "Your happiness is contagious! Remember these moments when things get tough.",
-            "Joy is a powerful emotion. Cherish this feeling and let it guide your day."
-        ],
-        sad: [
-            "Take a deep breath; everything will be okay. It's okay to feel sad sometimes.",
-            "I'm sorry you're feeling down. Remember that tough times don't last, but strong people do.",
-            "Sadness is a part of life. Be gentle with yourself and know that brighter days are ahead."
-        ],
-        angry: [
-            "I understand you're feeling angry. Take a moment to breathe and collect your thoughts.",
-            "Anger is a natural emotion. Try channeling it into something productive or take a walk.",
-            "Your feelings are valid. Consider what's causing this anger and how you can address it constructively."
-        ],
-        anxious: [
-            "I hear you're feeling anxious. Try focusing on your breathing for a few minutes.",
-            "Anxiety can be overwhelming. Remember that you've overcome challenges before and you will again.",
-            "Take one moment at a time. You don't have to solve everything at once."
-        ],
-        excited: [
-            "Your excitement is wonderful! Enjoy this feeling and let it motivate you.",
-            "It's great to see you so energized! Channel this excitement into something meaningful.",
-            "Excitement is a powerful emotion. Use this energy to pursue your goals."
-        ],
-        neutral: [
-            "Sometimes feeling neutral is perfectly fine. It gives you a moment of peace.",
-            "A calm state of mind can be refreshing. What would you like to do with this moment?",
-            "Neutral feelings can be a good foundation. What emotion would you like to cultivate today?"
-        ]
+        happy: ["It's wonderful to see you're feeling happy!", "Your happiness is contagious!", "Joy is a powerful emotion."],
+        sad: ["Take a deep breath; everything will be okay.", "I'm sorry you're feeling down.", "Sadness is a part of life."],
+        angry: ["I understand you're feeling angry.", "Anger is a natural emotion.", "Your feelings are valid."],
+        anxious: ["I hear you're feeling anxious.", "Anxiety can be overwhelming.", "Take one moment at a time."],
+        excited: ["Your excitement is wonderful!", "It's great to see you so energized!", "Excitement is a powerful emotion."],
+        neutral: ["Sometimes feeling neutral is perfectly fine.", "A calm state of mind can be refreshing.", "Neutral feelings can be a good foundation."]
     };
-
     const moodResponses = responses[mood] || responses.neutral;
     const randomResponse = moodResponses[Math.floor(Math.random() * moodResponses.length)];
-    
     elements.aiResponse.textContent = randomResponse;
 }
 
+// Save Feeling
 async function saveFeeling() {
     if (!selectedMood) {
         showNotification('Please select your mood');
         return;
     }
-
     const feelingText = elements.feelingText.value.trim();
     if (!feelingText) {
         showNotification('Please share your feelings');
         return;
     }
-
     const gratitude = elements.gratitudeInput.value.trim();
 
     try {
         const formData = new FormData();
         formData.append('feelingText', feelingText);
         formData.append('moodType', selectedMood);
-        if (gratitude) {
-            formData.append('gratitude', gratitude);
-        }
-
+        if (gratitude) formData.append('gratitude', gratitude);
         if (recordedChunks.length > 0) {
             const blob = new Blob(recordedChunks, { type: 'media/webm' });
             formData.append(isRecording === 'voice' ? 'voice' : 'video', blob);
         }
-
         const response = await fetch(`${API_URL}/feelings`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
             body: formData
         });
-
         const data = await response.json();
-
         if (response.ok) {
             showNotification('Feeling saved successfully!');
-            
             elements.aiResponse.textContent = data.aiResponse;
-            
             elements.feelingText.value = '';
             elements.gratitudeInput.value = '';
             selectedMood = null;
             elements.moodButtons.forEach(btn => btn.classList.remove('selected'));
             recordedChunks = [];
-            
             loadMoodChart();
         } else {
             showNotification(data.message || 'Failed to save feeling');
@@ -434,11 +366,10 @@ async function saveFeeling() {
     }
 }
 
+// --- CORRECTED: Recording functions now correctly handle preview modals ---
 async function toggleVoiceRecording() {
     if (isRecording === 'voice') {
         stopRecording();
-        elements.audioPreviewModal.classList.remove('active');
-        buttons.recordVoice.innerHTML = '<i class="fas fa-microphone"></i> Record Voice';
     } else {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -455,13 +386,10 @@ async function toggleVoiceRecording() {
 async function toggleVideoRecording() {
     if (isRecording === 'video') {
         stopRecording();
-        elements.liveVideoPreview.srcObject = null; // Stop the video stream
-        elements.videoPreviewModal.classList.remove('active');
-        buttons.recordVideo.innerHTML = '<i class="fas fa-video"></i> Record Video';
     } else {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            elements.liveVideoPreview.srcObject = stream; // Show live video
+            elements.liveVideoPreview.srcObject = stream;
             elements.videoPreviewModal.classList.add('active');
             startRecording(stream, 'video');
             buttons.recordVideo.innerHTML = '<i class="fas fa-stop"></i> Stop Recording';
@@ -472,28 +400,14 @@ async function toggleVideoRecording() {
     }
 }
 
-
 function startRecording(stream, type) {
     isRecording = type;
     recordedChunks = [];
-    
-    const options = {
-        mimeType: type === 'video' ? 'video/webm' : 'audio/webm'
-    };
-    
+    const options = { mimeType: type === 'video' ? 'video/webm' : 'audio/webm' };
     try {
         mediaRecorder = new MediaRecorder(stream, options);
-        
-        mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0) {
-                recordedChunks.push(event.data);
-            }
-        };
-        
-        mediaRecorder.onstop = () => {
-            stream.getTracks().forEach(track => track.stop());
-        };
-        
+        mediaRecorder.ondataavailable = (event) => { if (event.data.size > 0) recordedChunks.push(event.data); };
+        mediaRecorder.onstop = () => stream.getTracks().forEach(track => track.stop());
         mediaRecorder.start();
     } catch (error) {
         showNotification('Recording not supported in this browser');
@@ -501,6 +415,7 @@ function startRecording(stream, type) {
     }
 }
 
+// --- ENHANCED: stopRecording now closes modals and resets buttons ---
 function stopRecording() {
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
@@ -510,21 +425,30 @@ function stopRecording() {
         elements.liveVideoPreview.srcObject.getTracks().forEach(track => track.stop());
         elements.liveVideoPreview.srcObject = null;
     }
+    // Close modals and reset button HTML
+    if (isRecording === 'voice') {
+        elements.audioPreviewModal.classList.remove('active');
+        buttons.recordVoice.innerHTML = '<i class="fas fa-microphone"></i> Record Voice';
+    }
+    if (isRecording === 'video') {
+        elements.videoPreviewModal.classList.remove('active');
+        buttons.recordVideo.innerHTML = '<i class="fas fa-video"></i> Record Video';
+    }
     isRecording = false;
 }
+
+// --- CORRECTED: Combined loadFeelingsHistory to support filtering and prevent caching ---
 async function loadFeelingsHistory() {
     try {
         // Add a timestamp to the end of the URL to prevent browser caching
         const cacheBuster = new Date().getTime();
         const response = await fetch(`${API_URL}/feelings?t=${cacheBuster}`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
-
         if (response.ok) {
             const feelings = await response.json();
-            displayFeelingsHistory(feelings);
+            allFeelings = feelings; // Store all feelings in the global array
+            displayFeelingsHistory(allFeelings); // Display all initially
         } else {
             showNotification('Failed to load feelings history');
         }
@@ -533,9 +457,10 @@ async function loadFeelingsHistory() {
         console.error(error);
     }
 }
+
+// --- CORRECTED: displayFeelingsHistory now uses the global allFeelings array for edit/delete ---
 function displayFeelingsHistory(feelings) {
     elements.feelingsHistory.innerHTML = '';
-    
     if (feelings.length === 0) {
         elements.feelingsHistory.innerHTML = '<p>No feelings recorded yet. Start sharing on your dashboard!</p>';
         return;
@@ -544,7 +469,6 @@ function displayFeelingsHistory(feelings) {
     feelings.forEach(feeling => {
         const feelingCard = document.createElement('div');
         feelingCard.className = 'feeling-card';
-        
         const date = new Date(feeling.date).toLocaleDateString();
         const moodIcon = getMoodIcon(feeling.moodType);
         
@@ -558,33 +482,27 @@ function displayFeelingsHistory(feelings) {
         }
         
         feelingCard.innerHTML = `
-            <div class="feeling-header">
-                <span class="feeling-date">${date}</span>
-                <span class="feeling-mood">${moodIcon} ${feeling.moodType}</span>
-            </div>
+            <div class="feeling-header"><span class="feeling-date">${date}</span><span class="feeling-mood">${moodIcon} ${feeling.moodType}</span></div>
             <div class="feeling-text">${feeling.feelingText}</div>
             ${feeling.gratitude ? `<div class="feeling-gratitude">Grateful for: ${feeling.gratitude}</div>` : ''}
             <div class="feeling-response">${feeling.aiResponse}</div>
-            ${mediaHTML} <!-- Add the media here -->
+            ${mediaHTML}
             <div class="feeling-actions">
                 <button class="btn btn-small btn-secondary edit-feeling" data-id="${feeling._id}">Edit</button>
                 <button class="btn btn-small btn-secondary delete-feeling" data-id="${feeling._id}">Delete</button>
             </div>
         `;
-        
         elements.feelingsHistory.appendChild(feelingCard);
     });
     
-   
-
-  
+    // --- CORRECTED: Event listeners now find data from the global allFeelings array ---
     document.querySelectorAll('.edit-feeling').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const feelingId = e.target.getAttribute('data-id');
-            // Find the full feeling object from our original array
-            const feelingData = feelings.find(f => f._id === feelingId);
+            // Find the full feeling object from our GLOBAL array
+            const feelingData = allFeelings.find(f => f._id === feelingId);
             if (feelingData) {
-                openEditModal(feelingData); // Pass the entire data object
+                openEditModal(feelingData);
             }
         });
     });
@@ -597,22 +515,31 @@ function displayFeelingsHistory(feelings) {
     });
 }
 
-async function deleteFeeling(feelingId) {
-    if (!confirm('Are you sure you want to delete this feeling?')) {
+// --- NEW: Function to filter feelings by date ---
+function filterFeelingsByDate() {
+    const selectedDate = elements.dateFilter.value;
+    if (!selectedDate) {
+        displayFeelingsHistory(allFeelings);
         return;
     }
-    
+    const filteredFeelings = allFeelings.filter(feeling => {
+        const feelingDate = new Date(feeling.date).toISOString().split('T')[0];
+        return feelingDate === selectedDate;
+    });
+    displayFeelingsHistory(filteredFeelings);
+}
+
+// Delete Feeling
+async function deleteFeeling(feelingId) {
+    if (!confirm('Are you sure you want to delete this feeling?')) return;
     try {
         const response = await fetch(`${API_URL}/feelings/${feelingId}`, {
             method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
-        
         if (response.ok) {
             showNotification('Feeling deleted successfully');
-            loadFeelingsHistory();
+            loadFeelingsHistory(); // Reload all feelings to update the list
         } else {
             showNotification('Failed to delete feeling');
         }
@@ -622,16 +549,13 @@ async function deleteFeeling(feelingId) {
     }
 }
 
+// Chart & Other UI
 let moodChart = null;
-
 async function loadMoodChart() {
     try {
         const response = await fetch(`${API_URL}/feelings/stats`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
-
         if (response.ok) {
             const stats = await response.json();
             displayMoodChart(stats);
@@ -645,51 +569,20 @@ async function loadMoodChart() {
 }
 
 function displayMoodChart(stats) {
-    const ctx = document.getElementById('mood-chart').getContext('2d');
-    
-    if (moodChart) {
-        moodChart.destroy();
-    }
-    
+    const ctx = document.getElementById('mood-chart')?.getContext('2d');
+    if (!ctx) return;
+    if (moodChart) moodChart.destroy();
     const moodCounts = {};
-    stats.moodCounts.forEach(item => {
-        moodCounts[item._id] = item.count;
-    });
-    
-    const labels = Object.keys(moodCounts);
-    const data = Object.values(moodCounts);
-    
+    stats.moodCounts.forEach(item => { moodCounts[item._id] = item.count; });
     moodChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: [
-                    '#FFD166', 
-                    '#118AB2', 
-                    '#EF476F', 
-                    '#073B4C', 
-                    '#06D6A0', 
-                    '#F4F1DE'  
-                ],
-                borderWidth: 0
-            }]
+            labels: Object.keys(moodCounts),
+            datasets: [{ data: Object.values(moodCounts), backgroundColor: ['#FFD166', '#118AB2', '#EF476F', '#073B4C', '#06D6A0', '#F4F1DE'], borderWidth: 0 }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        font: {
-                            size: 12
-                        },
-                        padding: 15
-                    }
-                }
-            }
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 15 } } }
         }
     });
 }
@@ -697,7 +590,6 @@ function displayMoodChart(stats) {
 function loadDailyQuote() {
     const today = new Date().toDateString();
     const savedQuoteDate = localStorage.getItem('quoteDate');
-    
     if (savedQuoteDate === today) {
         elements.dailyQuote.textContent = localStorage.getItem('dailyQuote');
     } else {
@@ -708,37 +600,29 @@ function loadDailyQuote() {
     }
 }
 
+// --- HELPER FUNCTIONS ---
 function getMoodIcon(mood) {
-    const icons = {
-        happy: '😊',
-        sad: '😢',
-        angry: '😠',
-        anxious: '😰',
-        excited: '🤗',
-        neutral: '😐'
-    };
+    const icons = { happy: '😊', sad: '😢', angry: '😠', anxious: '😰', excited: '🤗', neutral: '😐' };
     return icons[mood] || '😐';
+}
+
+function getMoodIconClass(mood) {
+    const icons = { happy: 'fa-smile', sad: 'fa-sad-tear', angry: 'fa-angry', anxious: 'fa-worried', excited: 'fa-laugh-beam', neutral: 'fa-meh' };
+    return icons[mood] || 'fa-meh';
 }
 
 function showNotification(message) {
     elements.notificationMessage.textContent = message;
     elements.notification.classList.add('show');
-    
-    setTimeout(() => {
-        elements.notification.classList.remove('show');
-    }, 3000);
+    setTimeout(() => elements.notification.classList.remove('show'), 3000);
 }
 
-document.addEventListener('DOMContentLoaded', init);
-
+// --- EDIT MODAL FUNCTIONS ---
 function openEditModal(feelingData) {
-    // Populate the form using the passed data object
     elements.editFeelingId.value = feelingData._id;
     elements.editFeelingText.value = feelingData.feelingText;
     elements.editGratitude.value = feelingData.gratitude || '';
-
-    // Populate mood selector
-    elements.editMoodSelector.innerHTML = ''; 
+    elements.editMoodSelector.innerHTML = '';
     const moods = ['happy', 'sad', 'angry', 'anxious', 'excited', 'neutral'];
     moods.forEach(mood => {
         const btn = document.createElement('button');
@@ -746,15 +630,10 @@ function openEditModal(feelingData) {
         btn.className = 'mood-btn';
         btn.dataset.mood = mood;
         btn.innerHTML = `<i class="fas ${getMoodIconClass(mood)}"></i><span>${mood}</span>`;
-        if (mood === feelingData.moodType) {
-            btn.classList.add('selected');
-        }
-        // Add a new event listener for mood selection within the modal
+        if (mood === feelingData.moodType) btn.classList.add('selected');
         btn.addEventListener('click', () => selectEditMood(mood));
         elements.editMoodSelector.appendChild(btn);
     });
-
-    // Show the modal
     elements.editFeelingModal.classList.add('active');
 }
 
@@ -765,44 +644,28 @@ function closeEditModal() {
 
 function selectEditMood(mood) {
     document.querySelectorAll('#edit-mood-selector .mood-btn').forEach(btn => {
-        btn.classList.remove('selected');
-        if (btn.dataset.mood === mood) {
-            btn.classList.add('selected');
-        }
+        btn.classList.toggle('selected', btn.dataset.mood === mood);
     });
 }
 
 async function saveEditedFeeling(e) {
     e.preventDefault();
-    
     const feelingId = elements.editFeelingId.value;
     const feelingText = elements.editFeelingText.value;
     const gratitude = elements.editGratitude.value;
     const moodType = document.querySelector('#edit-mood-selector .mood-btn.selected')?.dataset.mood;
-
-    if (!moodType) {
-        showNotification('Please select a mood');
-        return;
-    }
-
+    if (!moodType) { showNotification('Please select a mood'); return; }
     try {
         const response = await fetch(`${API_URL}/feelings/${feelingId}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
             body: JSON.stringify({ feelingText, moodType, gratitude })
         });
-
         if (response.ok) {
             const updatedData = await response.json();
             showNotification('Feeling updated successfully!');
             closeEditModal();
-            
-            // Call the NEW function to update the page directly
             updateFeelingInHistory(updatedData);
-
         } else {
             const errorData = await response.json();
             showNotification(errorData.message || 'Failed to update feeling');
@@ -812,47 +675,29 @@ async function saveEditedFeeling(e) {
         console.error(error);
     }
 }
-function getMoodIconClass(mood) {
-    const icons = {
-        happy: 'fa-smile',
-        sad: 'fa-sad-tear',
-        angry: 'fa-angry',
-        anxious: 'fa-worried',
-        excited: 'fa-laugh-beam',
-        neutral: 'fa-meh'
-    };
-    return icons[mood] || 'fa-meh';
-}
-function updateFeelingInHistory(updatedData) {
-    // Find the feeling card on the page that matches the updated ID
-    const feelingCard = document.querySelector(`.edit-feeling[data-id="${updatedData._id}"]`).closest('.feeling-card');
 
+// --- NEW: Function to update a single item in the history list without a full reload ---
+function updateFeelingInHistory(updatedData) {
+    const feelingCard = document.querySelector(`.edit-feeling[data-id="${updatedData._id}"]`).closest('.feeling-card');
     if (feelingCard) {
-        // Update the text content directly
         feelingCard.querySelector('.feeling-text').textContent = updatedData.feelingText;
-        
-        // Update the gratitude section
         const gratitudeElement = feelingCard.querySelector('.feeling-gratitude');
         if (updatedData.gratitude) {
-            if (gratitudeElement) {
-                gratitudeElement.textContent = `Grateful for: ${updatedData.gratitude}`;
-            } else {
-                // If it didn't exist before, create it
+            if (!gratitudeElement) {
                 const newGratitudeDiv = document.createElement('div');
                 newGratitudeDiv.className = 'feeling-gratitude';
                 newGratitudeDiv.textContent = `Grateful for: ${updatedData.gratitude}`;
                 feelingCard.insertBefore(newGratitudeDiv, feelingCard.querySelector('.feeling-response'));
+            } else {
+                gratitudeElement.textContent = `Grateful for: ${updatedData.gratitude}`;
             }
         } else if (gratitudeElement) {
-            // If gratitude was removed, delete the element
             gratitudeElement.remove();
         }
-
-        // Update the mood
         const moodIcon = getMoodIcon(updatedData.moodType);
         feelingCard.querySelector('.feeling-mood').innerHTML = `${moodIcon} ${updatedData.moodType}`;
-
-        // Update the AI response
         feelingCard.querySelector('.feeling-response').textContent = updatedData.aiResponse;
     }
 }
+
+document.addEventListener('DOMContentLoaded', init);
