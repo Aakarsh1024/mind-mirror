@@ -191,6 +191,20 @@
             </section>
 
             <section id="history-page" class="page">
+                <!-- Inside the <section id="history-page"> -->
+<section id="history-page" class="page">
+    <div class="history-container">
+        <h1>Your Feeling History</h1>
+        <div class="history-filter">
+            <label for="date-filter">Filter by date:</label>
+            <input type="date" id="date-filter">
+            <button id="clear-filter-btn" class="btn btn-secondary">Clear</button>
+        </div>
+        <div id="feelings-history" class="feelings-list">
+            <!-- Feelings will be loaded here -->
+        </div>
+    </div>
+</section>
                 <div class="history-container">
                     <h1>Your Feeling History</h1>
                     <div id="feelings-history" class="feelings-list">
@@ -214,6 +228,25 @@
                 </div>
             </section>
         </main>
+
+        <!-- Live Preview Modals -->
+<div id="video-preview-modal" class="modal">
+    <div class="modal-content-preview">
+        <h3>Recording Video...</h3>
+        <video id="live-video-preview" autoplay muted></video>
+        <button id="stop-video-preview-btn" class="btn btn-primary">Stop Recording</button>
+    </div>
+</div>
+
+<div id="audio-preview-modal" class="modal">
+    <div class="modal-content-preview">
+        <h3>Recording Audio...</h3>
+        <div class="audio-indicator">
+            <i class="fas fa-microphone fa-pulse"></i>
+        </div>
+        <button id="stop-audio-preview-btn" class="btn btn-primary">Stop Recording</button>
+    </div>
+</div>
 
         <div id="calm-mode-modal" class="modal">
             <div class="modal-content">

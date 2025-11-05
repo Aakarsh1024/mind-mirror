@@ -25,6 +25,13 @@ const buttons = {
 };
 
 const elements = {
+    dateFilter: document.getElementById('date-filter'),
+    clearFilterBtn: document.getElementById('clear-filter-btn'),
+      videoPreviewModal: document.getElementById('video-preview-modal'),
+    audioPreviewModal: document.getElementById('audio-preview-modal'),
+    liveVideoPreview: document.getElementById('live-video-preview'),
+    stopVideoPreviewBtn: document.getElementById('stop-video-preview-btn'),
+    stopAudioPreviewBtn: document.getElementById('stop-audio-preview-btn'),
     editFeelingModal: document.getElementById('edit-feeling-modal'),
     editFeelingForm: document.getElementById('edit-feeling-form'),
     editFeelingId: document.getElementById('edit-feeling-id'),
@@ -90,9 +97,23 @@ function setupEventListeners() {
             showPage(pageName);
         });
     });
+    elements.dateFilter.addEventListener('change', filterFeelingsByDate);
+elements.clearFilterBtn.addEventListener('click', () => {
+    elements.dateFilter.value = '';
+    loadFeelingsHistory(); // Load all feelings again
+});
+
+
     function setupEventListeners() {
    
-
+        elements.stopVideoPreviewBtn.addEventListener('click', () => {
+    stopRecording();
+    buttons.recordVideo.innerHTML = '<i class="fas fa-video"></i> Record Video';
+});
+elements.stopAudioPreviewBtn.addEventListener('click', () => {
+    stopRecording();
+    buttons.recordVoice.innerHTML = '<i class="fas fa-microphone"></i> Record Voice';
+});
 
     elements.cancelEditBtn.addEventListener('click', closeEditModal);
     elements.editFeelingForm.addEventListener('submit', saveEditedFeeling);
@@ -139,7 +160,41 @@ function setupEventListeners() {
         elements.calmModeModal.classList.remove('active');
     });
 }
+let allFeelings = [];
 
+async function loadFeelingsHistory() {
+    try {
+        const response = await fetch(`${API_URL}/feelings`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const feelings = await response.json();
+            allFeelings = feelings; // Store all feelings
+            displayFeelingsHistory(allFeelings); // Display all initially
+        } else {
+            showNotification('Failed to load feelings history');
+        }
+    } catch (error) {
+        showNotification('An error occurred. Please try again.');
+        console.error(error);
+    }
+}
+
+function filterFeelingsByDate() {
+    const selectedDate = elements.dateFilter.value;
+    if (!selectedDate) {
+        displayFeelingsHistory(allFeelings);
+        return;
+    }
+
+    const filteredFeelings = allFeelings.filter(feeling => {
+        // Convert feeling date to YYYY-MM-DD format to match input
+        const feelingDate = new Date(feeling.date).toISOString().split('T')[0];
+        return feelingDate === selectedDate;
+    });
+
+    displayFeelingsHistory(filteredFeelings);
+}
 function showPage(pageName) {
     Object.values(pages).forEach(page => {
         page.classList.remove('active');
@@ -382,10 +437,12 @@ async function saveFeeling() {
 async function toggleVoiceRecording() {
     if (isRecording === 'voice') {
         stopRecording();
+        elements.audioPreviewModal.classList.remove('active');
         buttons.recordVoice.innerHTML = '<i class="fas fa-microphone"></i> Record Voice';
     } else {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            elements.audioPreviewModal.classList.add('active');
             startRecording(stream, 'voice');
             buttons.recordVoice.innerHTML = '<i class="fas fa-stop"></i> Stop Recording';
         } catch (error) {
@@ -398,10 +455,14 @@ async function toggleVoiceRecording() {
 async function toggleVideoRecording() {
     if (isRecording === 'video') {
         stopRecording();
+        elements.liveVideoPreview.srcObject = null; // Stop the video stream
+        elements.videoPreviewModal.classList.remove('active');
         buttons.recordVideo.innerHTML = '<i class="fas fa-video"></i> Record Video';
     } else {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            elements.liveVideoPreview.srcObject = stream; // Show live video
+            elements.videoPreviewModal.classList.add('active');
             startRecording(stream, 'video');
             buttons.recordVideo.innerHTML = '<i class="fas fa-stop"></i> Stop Recording';
         } catch (error) {
@@ -410,6 +471,7 @@ async function toggleVideoRecording() {
         }
     }
 }
+
 
 function startRecording(stream, type) {
     isRecording = type;
@@ -443,9 +505,13 @@ function stopRecording() {
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
     }
+    // Stop all tracks on the stream to turn off the camera/mic
+    if (elements.liveVideoPreview.srcObject) {
+        elements.liveVideoPreview.srcObject.getTracks().forEach(track => track.stop());
+        elements.liveVideoPreview.srcObject = null;
+    }
     isRecording = false;
 }
-
 async function loadFeelingsHistory() {
     try {
         // Add a timestamp to the end of the URL to prevent browser caching
@@ -467,7 +533,6 @@ async function loadFeelingsHistory() {
         console.error(error);
     }
 }
-
 function displayFeelingsHistory(feelings) {
     elements.feelingsHistory.innerHTML = '';
     
@@ -483,6 +548,15 @@ function displayFeelingsHistory(feelings) {
         const date = new Date(feeling.date).toLocaleDateString();
         const moodIcon = getMoodIcon(feeling.moodType);
         
+        // Construct media HTML
+        let mediaHTML = '';
+        if (feeling.voiceLink) {
+            mediaHTML += `<audio controls src="${API_URL.replace('/api', '')}${feeling.voiceLink}" type="audio/webm"></audio>`;
+        }
+        if (feeling.videoLink) {
+            mediaHTML += `<video controls src="${API_URL.replace('/api', '')}${feeling.videoLink}" type="video/webm" width="100%" style="border-radius: 8px; margin-top: 1rem;"></video>`;
+        }
+        
         feelingCard.innerHTML = `
             <div class="feeling-header">
                 <span class="feeling-date">${date}</span>
@@ -491,6 +565,7 @@ function displayFeelingsHistory(feelings) {
             <div class="feeling-text">${feeling.feelingText}</div>
             ${feeling.gratitude ? `<div class="feeling-gratitude">Grateful for: ${feeling.gratitude}</div>` : ''}
             <div class="feeling-response">${feeling.aiResponse}</div>
+            ${mediaHTML} <!-- Add the media here -->
             <div class="feeling-actions">
                 <button class="btn btn-small btn-secondary edit-feeling" data-id="${feeling._id}">Edit</button>
                 <button class="btn btn-small btn-secondary delete-feeling" data-id="${feeling._id}">Delete</button>
@@ -500,7 +575,9 @@ function displayFeelingsHistory(feelings) {
         elements.feelingsHistory.appendChild(feelingCard);
     });
     
-    // Add event listeners to the newly created buttons
+   
+
+  
     document.querySelectorAll('.edit-feeling').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const feelingId = e.target.getAttribute('data-id');
