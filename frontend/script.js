@@ -25,6 +25,12 @@ const buttons = {
 };
 
 const elements = {
+    editFeelingModal: document.getElementById('edit-feeling-modal'),
+    editFeelingForm: document.getElementById('edit-feeling-form'),
+    editFeelingId: document.getElementById('edit-feeling-id'),
+    editFeelingText: document.getElementById('edit-feeling-text'),
+    editMoodSelector: document.getElementById('edit-mood-selector'),
+    editGratitude: document.getElementById('edit-gratitude'),
     navLinks: document.querySelectorAll('.nav-link'),
     moodButtons: document.querySelectorAll('.mood-btn'),
     feelingText: document.getElementById('feeling-text'),
@@ -37,12 +43,7 @@ const elements = {
     profileDate: document.getElementById('profile-date'),
     notification: document.getElementById('notification'),
     notificationMessage: document.getElementById('notification-message'),
-    editFeelingModal: document.getElementById('edit-feeling-modal'),
-    editFeelingForm: document.getElementById('edit-feeling-form'),
-    editFeelingId: document.getElementById('edit-feeling-id'),
-    editFeelingText: document.getElementById('edit-feeling-text'),
-    editMoodSelector: document.getElementById('edit-mood-selector'),
-    editGratitude: document.getElementById('edit-gratitude'),
+    
     cancelEditBtn: document.getElementById('cancel-edit-btn'),
     calmModeModal: document.getElementById('calm-mode-modal')
 };
@@ -506,7 +507,7 @@ document.querySelectorAll('.edit-feeling').forEach(btn => {
     document.querySelectorAll('.edit-feeling').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const feelingId = e.target.getAttribute('data-id');
-            showNotification('Edit functionality to be implemented');
+           openEditModal(feelingId);
         });
     });
     
