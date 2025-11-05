@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mind Mirror - Your Emotional Companion</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-heart"></i>
+                <span>Mind Mirror</span>
+            </div>
+            <nav class="nav-menu">
+                <ul>
+                    <li><a href="#" class="nav-link active" data-page="dashboard">Dashboard</a></li>
+                    <li><a href="#" class="nav-link" data-page="history">History</a></li>
+                    <li><a href="#" class="nav-link" data-page="profile">Profile</a></li>
+                    <li><a href="#" id="logout-btn">Logout</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main class="main-content">
+            <section id="login-page" class="page active">
+                <div class="auth-container">
+                    <div class="auth-form-container">
+                        <h2>Welcome to Mind Mirror</h2>
+                        <p>Your personal emotional companion</p>
+                        
+                        <form id="login-form">
+                            <div class="form-group">
+                                <label for="login-email">Email</label>
+                                <input type="email" id="login-email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="login-password">Password</label>
+                                <input type="password" id="login-password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </form>
+                        
+                        <p class="auth-switch">Don't have an account? <a href="#" id="show-signup">Sign up</a></p>
+                    </div>
+                </div>
+            </section>
+<div id="edit-feeling-modal" class="modal">
+    <div class="modal-content">
+        <h3>Edit Your Feeling</h3>
+        <form id="edit-feeling-form">
+            <input type="hidden" id="edit-feeling-id">
+            
+            <div class="form-group">
+                <label for="edit-feeling-text">Feeling</label>
+                <textarea id="edit-feeling-text" required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Mood</label>
+                <div class="mood-selector" id="edit-mood-selector">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="edit-gratitude">Gratitude</label>
+                <input type="text" id="edit-gratitude">
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" id="cancel-edit-btn" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+            <section id="signup-page" class="page">
+                <div class="auth-container">
+                    <div class="auth-form-container">
+                        <h2>Join Mind Mirror</h2>
+                        <p>Start your emotional wellness journey</p>
+                        
+                        <form id="signup-form">
+                            <div class="form-group">
+                                <label for="signup-username">Username</label>
+                                <input type="text" id="signup-username" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="signup-email">Email</label>
+                                <input type="email" id="signup-email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="signup-password">Password</label>
+                                <input type="password" id="signup-password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Sign Up</button>
+                        </form>
+                        
+                        <p class="auth-switch">Already have an account? <a href="#" id="show-login">Login</a></p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="dashboard-page" class="page">
+                <div class="dashboard-container">
+                    <div class="dashboard-header">
+                        <h1>How are you feeling today?</h1>
+                        <div class="mood-selector">
+                            <button class="mood-btn" data-mood="happy">
+                                <i class="fas fa-smile"></i>
+                                <span>Happy</span>
+                            </button>
+                            <button class="mood-btn" data-mood="sad">
+                                <i class="fas fa-sad-tear"></i>
+                                <span>Sad</span>
+                            </button>
+                            <button class="mood-btn" data-mood="angry">
+                                <i class="fas fa-angry"></i>
+                                <span>Angry</span>
+                            </button>
+                            <button class="mood-btn" data-mood="anxious">
+                                <i class="fas fa-worried"></i>
+                                <span>Anxious</span>
+                            </button>
+                            <button class="mood-btn" data-mood="excited">
+                                <i class="fas fa-laugh-beam"></i>
+                                <span>Excited</span>
+                            </button>
+                            <button class="mood-btn" data-mood="neutral">
+                                <i class="fas fa-meh"></i>
+                                <span>Neutral</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-content">
+                        <div class="feeling-input-container">
+                            <div class="feeling-text-container">
+                                <h3>Share your feelings</h3>
+                                <textarea id="feeling-text" placeholder="What's on your mind today?"></textarea>
+                                
+                                <div class="media-options">
+                                    <button id="record-voice-btn" class="btn btn-secondary">
+                                        <i class="fas fa-microphone"></i> Record Voice
+                                    </button>
+                                    <button id="record-video-btn" class="btn btn-secondary">
+                                        <i class="fas fa-video"></i> Record Video
+                                    </button>
+                                </div>
+                                
+                                <div class="gratitude-container">
+                                    <h4>What are you grateful for today?</h4>
+                                    <input type="text" id="gratitude-input" placeholder="I'm grateful for...">
+                                </div>
+                                
+                                <button id="save-feeling-btn" class="btn btn-primary">Save Feeling</button>
+                            </div>
+                            
+                            <div class="ai-response-container">
+                                <h3>Your companion's response</h3>
+                                <div id="ai-response" class="ai-response-text">
+                                    Share your feelings, and I'll be here to support you.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-widgets">
+                            <div class="widget quote-widget">
+                                <h3>Daily Inspiration</h3>
+                                <p id="daily-quote">Loading quote...</p>
+                            </div>
+                            
+                            <div class="widget mood-tracker-widget">
+                                <h3>Your Mood Trends</h3>
+                                <div id="mood-chart-container">
+                                    <canvas id="mood-chart"></canvas>
+                                </div>
+                            </div>
+                            
+                            <div class="widget calm-mode-widget">
+                                <h3>Need a moment of calm?</h3>
+                                <button id="calm-mode-btn" class="btn btn-secondary">Activate Calm Mode</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="history-page" class="page">
+                <div class="history-container">
+                    <h1>Your Feeling History</h1>
+                    <div id="feelings-history" class="feelings-list">
+                    </div>
+                </div>
+            </section>
+
+            <section id="profile-page" class="page">
+                <div class="profile-container">
+                    <h1>Your Profile</h1>
+                    <div class="profile-info">
+                        <div class="profile-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="profile-details">
+                            <h2 id="profile-username">Username</h2>
+                            <p id="profile-email">Email</p>
+                            <p>Member since: <span id="profile-date">Date</span></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div id="calm-mode-modal" class="modal">
+            <div class="modal-content">
+                <div class="calm-animation">
+                    <div class="calm-circle"></div>
+                    <div class="calm-circle"></div>
+                    <div class="calm-circle"></div>
+                </div>
+                <p>Take a deep breath and relax. Everything will be okay.</p>
+                <button id="close-calm-mode" class="btn btn-primary">Return</button>
+            </div>
+        </div>
+
+        <div id="notification" class="notification">
+            <p id="notification-message"></p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="script.js"></script>
+</body>
+</html>
