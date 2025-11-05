@@ -23,17 +23,8 @@ const buttons = {
     closeCalmMode: document.getElementById('close-calm-mode')
 };
 
-// Consolidated all elements into a single object for clarity
+// Consolidated all elements into one object for clarity
 const elements = {
-    // History Filter Elements
-    dateFilter: document.getElementById('date-filter'),
-    clearFilterBtn: document.getElementById('clear-filter-btn'),
-    // Recording Preview Elements
-    videoPreviewModal: document.getElementById('video-preview-modal'),
-    audioPreviewModal: document.getElementById('audio-preview-modal'),
-    liveVideoPreview: document.getElementById('live-video-preview'),
-    stopVideoPreviewBtn: document.getElementById('stop-video-preview-btn'),
-    stopAudioPreviewBtn: document.getElementById('stop-audio-preview-btn'),
     // Edit Modal Elements
     editFeelingModal: document.getElementById('edit-feeling-modal'),
     editFeelingForm: document.getElementById('edit-feeling-form'),
@@ -42,6 +33,18 @@ const elements = {
     editMoodSelector: document.getElementById('edit-mood-selector'),
     editGratitude: document.getElementById('edit-gratitude'),
     cancelEditBtn: document.getElementById('cancel-edit-btn'),
+
+    // Recording Preview Elements
+    videoPreviewModal: document.getElementById('video-preview-modal'),
+    audioPreviewModal: document.getElementById('audio-preview-modal'),
+    liveVideoPreview: document.getElementById('live-video-preview'),
+    stopVideoPreviewBtn: document.getElementById('stop-video-preview-btn'),
+    stopAudioPreviewBtn: document.getElementById('stop-audio-preview-btn'),
+
+    // History Filter Elements
+    dateFilter: document.getElementById('date-filter'),
+    clearFilterBtn: document.getElementById('clear-filter-btn'),
+
     // General App Elements
     navLinks: document.querySelectorAll('.nav-link'),
     moodButtons: document.querySelectorAll('.mood-btn'),
@@ -67,7 +70,7 @@ let selectedMood = null;
 let isRecording = false;
 let mediaRecorder = null;
 let recordedChunks = [];
-let allFeelings = []; // Global array to store all feelings for filtering
+let allFeelings = []; // Global array for all feelings, used for filtering
 
 // Daily Quotes
 const dailyQuotes = [
@@ -96,9 +99,9 @@ function init() {
     loadDailyQuote();
 }
 
-// --- CORRECTED: setupEventListeners is now a single, flat function ---
+// Setup Event Listeners
 function setupEventListeners() {
-    // Navigation listeners
+    // Navigation
     elements.navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
@@ -107,25 +110,7 @@ function setupEventListeners() {
         });
     });
 
-    // History Filter listeners
-    elements.dateFilter.addEventListener('change', filterFeelingsByDate);
-    elements.clearFilterBtn.addEventListener('click', () => {
-        elements.dateFilter.value = '';
-        // Use the global allFeelings to display all items again
-        displayFeelingsHistory(allFeelings);
-    });
-
-    // Recording Preview listeners
-    elements.stopVideoPreviewBtn.addEventListener('click', () => {
-        stopRecording();
-        buttons.recordVideo.innerHTML = '<i class="fas fa-video"></i> Record Video';
-    });
-    elements.stopAudioPreviewBtn.addEventListener('click', () => {
-        stopRecording();
-        buttons.recordVoice.innerHTML = '<i class="fas fa-microphone"></i> Record Voice';
-    });
-
-    // Edit Modal listeners
+    // Edit Modal Listeners
     elements.cancelEditBtn.addEventListener('click', closeEditModal);
     elements.editFeelingForm.addEventListener('submit', saveEditedFeeling);
     elements.editFeelingModal.addEventListener('click', (e) => {
@@ -134,40 +119,65 @@ function setupEventListeners() {
         }
     });
 
-    // Auth form listeners
+    // Auth forms
     forms.login.addEventListener('submit', handleLogin);
     forms.signup.addEventListener('submit', handleSignup);
 
-    // Auth switch listeners
+    // Auth switches
     buttons.showSignup.addEventListener('click', (e) => {
         e.preventDefault();
         showPage('signup');
     });
+
     buttons.showLogin.addEventListener('click', (e) => {
         e.preventDefault();
         showPage('login');
     });
 
-    // Logout listener
+    // Logout
     buttons.logout.addEventListener('click', handleLogout);
 
-    // Dashboard listeners
+    // Mood selection
     elements.moodButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             selectMood(btn.getAttribute('data-mood'));
         });
     });
+
+    // Save feeling
     buttons.saveFeeling.addEventListener('click', saveFeeling);
+
+    // Media recording
+    buttons.recordVoice.addEventListener('click', toggleVoiceRecording);
+    buttons.recordVideo.addEventListener('click', toggleVideoRecording);
+
+    // Recording preview stop buttons
+    elements.stopVideoPreviewBtn.addEventListener('click', () => {
+        stopRecording();
+        elements.videoPreviewModal.classList.remove('active');
+        buttons.recordVideo.innerHTML = '<i class="fas fa-video"></i> Record Video';
+    });
+    elements.stopAudioPreviewBtn.addEventListener('click', () => {
+        stopRecording();
+        elements.audioPreviewModal.classList.remove('active');
+        buttons.recordVoice.innerHTML = '<i class="fas fa-microphone"></i> Record Voice';
+    });
+
+    // Calm mode
     buttons.calmMode.addEventListener('click', () => {
         elements.calmModeModal.classList.add('active');
     });
+
     buttons.closeCalmMode.addEventListener('click', () => {
         elements.calmModeModal.classList.remove('active');
     });
 
-    // Recording start listeners
-    buttons.recordVoice.addEventListener('click', toggleVoiceRecording);
-    buttons.recordVideo.addEventListener('click', toggleVideoRecording);
+    // History Filter Listeners
+    elements.dateFilter.addEventListener('change', filterFeelingsByDate);
+    elements.clearFilterBtn.addEventListener('click', () => {
+        elements.dateFilter.value = '';
+        displayFeelingsHistory(allFeelings); // Display all feelings again
+    });
 }
 
 // Page Navigation
@@ -194,7 +204,7 @@ function showPage(pageName) {
     }
 }
 
-// Authentication functions
+// Authentication
 async function handleLogin(e) {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
@@ -203,7 +213,9 @@ async function handleLogin(e) {
     try {
         const response = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ email, password })
         });
 
@@ -234,7 +246,9 @@ async function handleSignup(e) {
     try {
         const response = await fetch(`${API_URL}/auth/register`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ username, email, password })
         });
 
@@ -266,7 +280,9 @@ function handleLogout() {
 async function fetchUserProfile(token) {
     try {
         const response = await fetch(`${API_URL}/auth/profile`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
         });
 
         if (response.ok) {
@@ -297,12 +313,14 @@ function updateProfileUI() {
 // Mood Selection & AI Response
 function selectMood(mood) {
     selectedMood = mood;
+    
     elements.moodButtons.forEach(btn => {
         btn.classList.remove('selected');
         if (btn.getAttribute('data-mood') === mood) {
             btn.classList.add('selected');
         }
     });
+    
     generateAIResponse(mood);
 }
 
@@ -326,28 +344,38 @@ async function saveFeeling() {
         showNotification('Please select your mood');
         return;
     }
+
     const feelingText = elements.feelingText.value.trim();
     if (!feelingText) {
         showNotification('Please share your feelings');
         return;
     }
+
     const gratitude = elements.gratitudeInput.value.trim();
 
     try {
         const formData = new FormData();
         formData.append('feelingText', feelingText);
         formData.append('moodType', selectedMood);
-        if (gratitude) formData.append('gratitude', gratitude);
+        if (gratitude) {
+            formData.append('gratitude', gratitude);
+        }
+
         if (recordedChunks.length > 0) {
             const blob = new Blob(recordedChunks, { type: 'media/webm' });
             formData.append(isRecording === 'voice' ? 'voice' : 'video', blob);
         }
+
         const response = await fetch(`${API_URL}/feelings`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
             body: formData
         });
+
         const data = await response.json();
+
         if (response.ok) {
             showNotification('Feeling saved successfully!');
             elements.aiResponse.textContent = data.aiResponse;
@@ -366,10 +394,12 @@ async function saveFeeling() {
     }
 }
 
-// --- CORRECTED: Recording functions now correctly handle preview modals ---
+// Recording Functions
 async function toggleVoiceRecording() {
     if (isRecording === 'voice') {
         stopRecording();
+        elements.audioPreviewModal.classList.remove('active');
+        buttons.recordVoice.innerHTML = '<i class="fas fa-microphone"></i> Record Voice';
     } else {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -386,10 +416,13 @@ async function toggleVoiceRecording() {
 async function toggleVideoRecording() {
     if (isRecording === 'video') {
         stopRecording();
+        elements.liveVideoPreview.srcObject = null; // Stop the video stream
+        elements.videoPreviewModal.classList.remove('active');
+        buttons.recordVideo.innerHTML = '<i class="fas fa-video"></i> Record Video';
     } else {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            elements.liveVideoPreview.srcObject = stream;
+            elements.liveVideoPreview.srcObject = stream; // Show live video
             elements.videoPreviewModal.classList.add('active');
             startRecording(stream, 'video');
             buttons.recordVideo.innerHTML = '<i class="fas fa-stop"></i> Stop Recording';
@@ -403,11 +436,24 @@ async function toggleVideoRecording() {
 function startRecording(stream, type) {
     isRecording = type;
     recordedChunks = [];
-    const options = { mimeType: type === 'video' ? 'video/webm' : 'audio/webm' };
+    
+    const options = {
+        mimeType: type === 'video' ? 'video/webm' : 'audio/webm'
+    };
+    
     try {
         mediaRecorder = new MediaRecorder(stream, options);
-        mediaRecorder.ondataavailable = (event) => { if (event.data.size > 0) recordedChunks.push(event.data); };
-        mediaRecorder.onstop = () => stream.getTracks().forEach(track => track.stop());
+        
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+        };
+        
+        mediaRecorder.onstop = () => {
+            stream.getTracks().forEach(track => track.stop());
+        };
+        
         mediaRecorder.start();
     } catch (error) {
         showNotification('Recording not supported in this browser');
@@ -415,7 +461,6 @@ function startRecording(stream, type) {
     }
 }
 
-// --- ENHANCED: stopRecording now closes modals and resets buttons ---
 function stopRecording() {
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
@@ -425,29 +470,21 @@ function stopRecording() {
         elements.liveVideoPreview.srcObject.getTracks().forEach(track => track.stop());
         elements.liveVideoPreview.srcObject = null;
     }
-    // Close modals and reset button HTML
-    if (isRecording === 'voice') {
-        elements.audioPreviewModal.classList.remove('active');
-        buttons.recordVoice.innerHTML = '<i class="fas fa-microphone"></i> Record Voice';
-    }
-    if (isRecording === 'video') {
-        elements.videoPreviewModal.classList.remove('active');
-        buttons.recordVideo.innerHTML = '<i class="fas fa-video"></i> Record Video';
-    }
     isRecording = false;
 }
 
-// --- CORRECTED: Combined loadFeelingsHistory to support filtering and prevent caching ---
+// History Functions
 async function loadFeelingsHistory() {
     try {
-        // Add a timestamp to the end of the URL to prevent browser caching
-        const cacheBuster = new Date().getTime();
-        const response = await fetch(`${API_URL}/feelings?t=${cacheBuster}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        const response = await fetch(`${API_URL}/feelings`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
         });
+
         if (response.ok) {
             const feelings = await response.json();
-            allFeelings = feelings; // Store all feelings in the global array
+            allFeelings = feelings; // Store all feelings globally
             displayFeelingsHistory(allFeelings); // Display all initially
         } else {
             showNotification('Failed to load feelings history');
@@ -458,9 +495,9 @@ async function loadFeelingsHistory() {
     }
 }
 
-// --- CORRECTED: displayFeelingsHistory now uses the global allFeelings array for edit/delete ---
 function displayFeelingsHistory(feelings) {
     elements.feelingsHistory.innerHTML = '';
+    
     if (feelings.length === 0) {
         elements.feelingsHistory.innerHTML = '<p>No feelings recorded yet. Start sharing on your dashboard!</p>';
         return;
@@ -469,10 +506,11 @@ function displayFeelingsHistory(feelings) {
     feelings.forEach(feeling => {
         const feelingCard = document.createElement('div');
         feelingCard.className = 'feeling-card';
+        
         const date = new Date(feeling.date).toLocaleDateString();
         const moodIcon = getMoodIcon(feeling.moodType);
         
-        // Construct media HTML
+        // Construct media HTML for playback
         let mediaHTML = '';
         if (feeling.voiceLink) {
             mediaHTML += `<audio controls src="${API_URL.replace('/api', '')}${feeling.voiceLink}" type="audio/webm"></audio>`;
@@ -482,7 +520,10 @@ function displayFeelingsHistory(feelings) {
         }
         
         feelingCard.innerHTML = `
-            <div class="feeling-header"><span class="feeling-date">${date}</span><span class="feeling-mood">${moodIcon} ${feeling.moodType}</span></div>
+            <div class="feeling-header">
+                <span class="feeling-date">${date}</span>
+                <span class="feeling-mood">${moodIcon} ${feeling.moodType}</span>
+            </div>
             <div class="feeling-text">${feeling.feelingText}</div>
             ${feeling.gratitude ? `<div class="feeling-gratitude">Grateful for: ${feeling.gratitude}</div>` : ''}
             <div class="feeling-response">${feeling.aiResponse}</div>
@@ -492,17 +533,18 @@ function displayFeelingsHistory(feelings) {
                 <button class="btn btn-small btn-secondary delete-feeling" data-id="${feeling._id}">Delete</button>
             </div>
         `;
+        
         elements.feelingsHistory.appendChild(feelingCard);
     });
     
-    // --- CORRECTED: Event listeners now find data from the global allFeelings array ---
+    // Add event listeners to the newly created buttons
     document.querySelectorAll('.edit-feeling').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const feelingId = e.target.getAttribute('data-id');
-            // Find the full feeling object from our GLOBAL array
+            // Find the full feeling object from our original global array
             const feelingData = allFeelings.find(f => f._id === feelingId);
             if (feelingData) {
-                openEditModal(feelingData);
+                openEditModal(feelingData); // Pass the entire data object
             }
         });
     });
@@ -515,31 +557,155 @@ function displayFeelingsHistory(feelings) {
     });
 }
 
-// --- NEW: Function to filter feelings by date ---
 function filterFeelingsByDate() {
     const selectedDate = elements.dateFilter.value;
     if (!selectedDate) {
         displayFeelingsHistory(allFeelings);
         return;
     }
+
     const filteredFeelings = allFeelings.filter(feeling => {
+        // Convert feeling date to YYYY-MM-DD format to match input
         const feelingDate = new Date(feeling.date).toISOString().split('T')[0];
         return feelingDate === selectedDate;
     });
+
     displayFeelingsHistory(filteredFeelings);
 }
 
-// Delete Feeling
+// Edit Functions
+function openEditModal(feelingData) {
+    // Populate the form using the passed data object
+    elements.editFeelingId.value = feelingData._id;
+    elements.editFeelingText.value = feelingData.feelingText;
+    elements.editGratitude.value = feelingData.gratitude || '';
+
+    // Populate mood selector
+    elements.editMoodSelector.innerHTML = ''; 
+    const moods = ['happy', 'sad', 'angry', 'anxious', 'excited', 'neutral'];
+    moods.forEach(mood => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'mood-btn';
+        btn.dataset.mood = mood;
+        btn.innerHTML = `<i class="fas ${getMoodIconClass(mood)}"></i><span>${mood}</span>`;
+        if (mood === feelingData.moodType) {
+            btn.classList.add('selected');
+        }
+        // Add a new event listener for mood selection within the modal
+        btn.addEventListener('click', () => selectEditMood(mood));
+        elements.editMoodSelector.appendChild(btn);
+    });
+
+    // Show the modal
+    elements.editFeelingModal.classList.add('active');
+}
+
+function closeEditModal() {
+    elements.editFeelingModal.classList.remove('active');
+    elements.editFeelingForm.reset();
+}
+
+function selectEditMood(mood) {
+    document.querySelectorAll('#edit-mood-selector .mood-btn').forEach(btn => {
+        btn.classList.remove('selected');
+        if (btn.dataset.mood === mood) {
+            btn.classList.add('selected');
+        }
+    });
+}
+
+async function saveEditedFeeling(e) {
+    e.preventDefault();
+    
+    const feelingId = elements.editFeelingId.value;
+    const feelingText = elements.editFeelingText.value;
+    const gratitude = elements.editGratitude.value;
+    const moodType = document.querySelector('#edit-mood-selector .mood-btn.selected')?.dataset.mood;
+
+    if (!moodType) {
+        showNotification('Please select a mood');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/feelings/${feelingId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ feelingText, moodType, gratitude })
+        });
+
+        if (response.ok) {
+            const updatedData = await response.json();
+            showNotification('Feeling updated successfully!');
+            closeEditModal();
+            
+            // Call the function to update the page directly without a full reload
+            updateFeelingInHistory(updatedData);
+
+        } else {
+            const errorData = await response.json();
+            showNotification(errorData.message || 'Failed to update feeling');
+        }
+    } catch (error) {
+        showNotification('An error occurred. Please try again.');
+        console.error(error);
+    }
+}
+
+function updateFeelingInHistory(updatedData) {
+    // Find the feeling card on the page that matches the updated ID
+    const feelingCard = document.querySelector(`.edit-feeling[data-id="${updatedData._id}"]`).closest('.feeling-card');
+
+    if (feelingCard) {
+        // Update the text content directly
+        feelingCard.querySelector('.feeling-text').textContent = updatedData.feelingText;
+        
+        // Update the gratitude section
+        const gratitudeElement = feelingCard.querySelector('.feeling-gratitude');
+        if (updatedData.gratitude) {
+            if (gratitudeElement) {
+                gratitudeElement.textContent = `Grateful for: ${updatedData.gratitude}`;
+            } else {
+                // If it didn't exist before, create it
+                const newGratitudeDiv = document.createElement('div');
+                newGratitudeDiv.className = 'feeling-gratitude';
+                newGratitudeDiv.textContent = `Grateful for: ${updatedData.gratitude}`;
+                feelingCard.insertBefore(newGratitudeDiv, feelingCard.querySelector('.feeling-response'));
+            }
+        } else if (gratitudeElement) {
+            // If gratitude was removed, delete the element
+            gratitudeElement.remove();
+        }
+
+        // Update the mood
+        const moodIcon = getMoodIcon(updatedData.moodType);
+        feelingCard.querySelector('.feeling-mood').innerHTML = `${moodIcon} ${updatedData.moodType}`;
+
+        // Update the AI response
+        feelingCard.querySelector('.feeling-response').textContent = updatedData.aiResponse;
+    }
+}
+
 async function deleteFeeling(feelingId) {
-    if (!confirm('Are you sure you want to delete this feeling?')) return;
+    if (!confirm('Are you sure you want to delete this feeling?')) {
+        return;
+    }
+    
     try {
         const response = await fetch(`${API_URL}/feelings/${feelingId}`, {
             method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
         });
+        
         if (response.ok) {
             showNotification('Feeling deleted successfully');
-            loadFeelingsHistory(); // Reload all feelings to update the list
+            loadFeelingsHistory(); // Reload the entire history to reflect the deletion
         } else {
             showNotification('Failed to delete feeling');
         }
@@ -549,13 +715,17 @@ async function deleteFeeling(feelingId) {
     }
 }
 
-// Chart & Other UI
+// Chart & Other UI Functions
 let moodChart = null;
+
 async function loadMoodChart() {
     try {
         const response = await fetch(`${API_URL}/feelings/stats`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
         });
+
         if (response.ok) {
             const stats = await response.json();
             displayMoodChart(stats);
@@ -570,19 +740,51 @@ async function loadMoodChart() {
 
 function displayMoodChart(stats) {
     const ctx = document.getElementById('mood-chart')?.getContext('2d');
-    if (!ctx) return;
-    if (moodChart) moodChart.destroy();
+    if (!ctx) return; // Exit if chart element is not on the page
+
+    if (moodChart) {
+        moodChart.destroy();
+    }
+    
     const moodCounts = {};
-    stats.moodCounts.forEach(item => { moodCounts[item._id] = item.count; });
+    stats.moodCounts.forEach(item => {
+        moodCounts[item._id] = item.count;
+    });
+    
+    const labels = Object.keys(moodCounts);
+    const data = Object.values(moodCounts);
+    
     moodChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: Object.keys(moodCounts),
-            datasets: [{ data: Object.values(moodCounts), backgroundColor: ['#FFD166', '#118AB2', '#EF476F', '#073B4C', '#06D6A0', '#F4F1DE'], borderWidth: 0 }]
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: [
+                    '#FFD166', 
+                    '#118AB2', 
+                    '#EF476F', 
+                    '#073B4C', 
+                    '#06D6A0', 
+                    '#F4F1DE'  
+                ],
+                borderWidth: 0
+            }]
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 15 } } }
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: {
+                            size: 12
+                        },
+                        padding: 15
+                    }
+                }
+            }
         }
     });
 }
@@ -590,6 +792,7 @@ function displayMoodChart(stats) {
 function loadDailyQuote() {
     const today = new Date().toDateString();
     const savedQuoteDate = localStorage.getItem('quoteDate');
+    
     if (savedQuoteDate === today) {
         elements.dailyQuote.textContent = localStorage.getItem('dailyQuote');
     } else {
@@ -600,104 +803,39 @@ function loadDailyQuote() {
     }
 }
 
-// --- HELPER FUNCTIONS ---
+// Helper Functions
 function getMoodIcon(mood) {
-    const icons = { happy: '😊', sad: '😢', angry: '😠', anxious: '😰', excited: '🤗', neutral: '😐' };
+    const icons = {
+        happy: '😊',
+        sad: '😢',
+        angry: '😠',
+        anxious: '😰',
+        excited: '🤗',
+        neutral: '😐'
+    };
     return icons[mood] || '😐';
 }
 
 function getMoodIconClass(mood) {
-    const icons = { happy: 'fa-smile', sad: 'fa-sad-tear', angry: 'fa-angry', anxious: 'fa-worried', excited: 'fa-laugh-beam', neutral: 'fa-meh' };
+    const icons = {
+        happy: 'fa-smile',
+        sad: 'fa-sad-tear',
+        angry: 'fa-angry',
+        anxious: 'fa-worried',
+        excited: 'fa-laugh-beam',
+        neutral: 'fa-meh'
+    };
     return icons[mood] || 'fa-meh';
 }
 
 function showNotification(message) {
     elements.notificationMessage.textContent = message;
     elements.notification.classList.add('show');
-    setTimeout(() => elements.notification.classList.remove('show'), 3000);
+    
+    setTimeout(() => {
+        elements.notification.classList.remove('show');
+    }, 3000);
 }
 
-// --- EDIT MODAL FUNCTIONS ---
-function openEditModal(feelingData) {
-    elements.editFeelingId.value = feelingData._id;
-    elements.editFeelingText.value = feelingData.feelingText;
-    elements.editGratitude.value = feelingData.gratitude || '';
-    elements.editMoodSelector.innerHTML = '';
-    const moods = ['happy', 'sad', 'angry', 'anxious', 'excited', 'neutral'];
-    moods.forEach(mood => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'mood-btn';
-        btn.dataset.mood = mood;
-        btn.innerHTML = `<i class="fas ${getMoodIconClass(mood)}"></i><span>${mood}</span>`;
-        if (mood === feelingData.moodType) btn.classList.add('selected');
-        btn.addEventListener('click', () => selectEditMood(mood));
-        elements.editMoodSelector.appendChild(btn);
-    });
-    elements.editFeelingModal.classList.add('active');
-}
-
-function closeEditModal() {
-    elements.editFeelingModal.classList.remove('active');
-    elements.editFeelingForm.reset();
-}
-
-function selectEditMood(mood) {
-    document.querySelectorAll('#edit-mood-selector .mood-btn').forEach(btn => {
-        btn.classList.toggle('selected', btn.dataset.mood === mood);
-    });
-}
-
-async function saveEditedFeeling(e) {
-    e.preventDefault();
-    const feelingId = elements.editFeelingId.value;
-    const feelingText = elements.editFeelingText.value;
-    const gratitude = elements.editGratitude.value;
-    const moodType = document.querySelector('#edit-mood-selector .mood-btn.selected')?.dataset.mood;
-    if (!moodType) { showNotification('Please select a mood'); return; }
-    try {
-        const response = await fetch(`${API_URL}/feelings/${feelingId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: JSON.stringify({ feelingText, moodType, gratitude })
-        });
-        if (response.ok) {
-            const updatedData = await response.json();
-            showNotification('Feeling updated successfully!');
-            closeEditModal();
-            updateFeelingInHistory(updatedData);
-        } else {
-            const errorData = await response.json();
-            showNotification(errorData.message || 'Failed to update feeling');
-        }
-    } catch (error) {
-        showNotification('An error occurred. Please try again.');
-        console.error(error);
-    }
-}
-
-// --- NEW: Function to update a single item in the history list without a full reload ---
-function updateFeelingInHistory(updatedData) {
-    const feelingCard = document.querySelector(`.edit-feeling[data-id="${updatedData._id}"]`).closest('.feeling-card');
-    if (feelingCard) {
-        feelingCard.querySelector('.feeling-text').textContent = updatedData.feelingText;
-        const gratitudeElement = feelingCard.querySelector('.feeling-gratitude');
-        if (updatedData.gratitude) {
-            if (!gratitudeElement) {
-                const newGratitudeDiv = document.createElement('div');
-                newGratitudeDiv.className = 'feeling-gratitude';
-                newGratitudeDiv.textContent = `Grateful for: ${updatedData.gratitude}`;
-                feelingCard.insertBefore(newGratitudeDiv, feelingCard.querySelector('.feeling-response'));
-            } else {
-                gratitudeElement.textContent = `Grateful for: ${updatedData.gratitude}`;
-            }
-        } else if (gratitudeElement) {
-            gratitudeElement.remove();
-        }
-        const moodIcon = getMoodIcon(updatedData.moodType);
-        feelingCard.querySelector('.feeling-mood').innerHTML = `${moodIcon} ${updatedData.moodType}`;
-        feelingCard.querySelector('.feeling-response').textContent = updatedData.aiResponse;
-    }
-}
 
 document.addEventListener('DOMContentLoaded', init);
