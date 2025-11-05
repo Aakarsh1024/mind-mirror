@@ -448,7 +448,7 @@ function stopRecording() {
 
 async function loadFeelingsHistory() {
     try {
-        // Add a timestamp to the end of the URL to prevent caching
+        // Add a timestamp to the end of the URL to prevent browser caching
         const cacheBuster = new Date().getTime();
         const response = await fetch(`${API_URL}/feelings?t=${cacheBuster}`, {
             headers: {
@@ -672,6 +672,7 @@ function openEditModal(feelingData) {
         if (mood === feelingData.moodType) {
             btn.classList.add('selected');
         }
+        // Add a new event listener for mood selection within the modal
         btn.addEventListener('click', () => selectEditMood(mood));
         elements.editMoodSelector.appendChild(btn);
     });
@@ -720,7 +721,9 @@ async function saveEditedFeeling(e) {
         if (response.ok) {
             showNotification('Feeling updated successfully!');
             closeEditModal();
-            loadFeelingsHistory(); // Refresh the history list
+            
+            // Force a refresh of the history list to show the change
+            loadFeelingsHistory();
         } else {
             const errorData = await response.json();
             showNotification(errorData.message || 'Failed to update feeling');
