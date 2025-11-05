@@ -448,7 +448,9 @@ function stopRecording() {
 
 async function loadFeelingsHistory() {
     try {
-        const response = await fetch(`${API_URL}/feelings`, {
+        // Add a timestamp to the end of the URL to prevent caching
+        const cacheBuster = new Date().getTime();
+        const response = await fetch(`${API_URL}/feelings?t=${cacheBuster}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
